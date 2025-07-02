@@ -1,83 +1,78 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Corporativo</title>
+    <title>Video Player em Loop</title>
     <style>
+        /* Remove margens e barras de rolagem da página */
         body, html {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #000;
-        }
-        video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
             height: 100%;
-            object-fit: cover;
+            width: 100%;
+            background-color: black; /* Fundo preto para o caso de o vídeo demorar a carregar */
+        }
+
+        /* Estilo para o player de vídeo */
+        #videoPlayer {
+            /* Posiciona o vídeo para cobrir toda a tela */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translateX(-50%) translateY(-50%);
+            
+            /* Garante que o vídeo cubra a área sem distorcer, cortando o excesso se necessário */
+            object-fit: cover; 
         }
     </style>
 </head>
 <body>
 
-    <video id="video-player"></video>
+    <!-- O elemento de vídeo. Começa sem 'src' porque o JavaScript irá defini-lo. -->
+    <!-- autoplay: Tenta iniciar o vídeo automaticamente. -->
+    <!-- muted: Essencial para o autoplay funcionar na maioria dos navegadores modernos. -->
+    <!-- playsinline: Ajuda na reprodução em dispositivos móveis (iOS). -->
+    <video id="videoPlayer" autoplay muted playsinline></video>
 
     <script>
-        // ================================================================= //
-        // =======================  CONFIGURAÇÃO  ======================== //
-        //                                                                   //
-        //  Adicione aqui o nome EXATO dos seus arquivos de vídeo .mp4       //
-        //                                                                   //
-        const LISTA_DE_VIDEOS = [
-            "202506181550 (1).mp4"
-            // Se você upar outro vídeo, adicione o nome dele na próxima linha.
-            // Exemplo:
-            // "outro_video.mp4",
-            // "video_da_empresa.mp4"
+        // Lista (array) com as URLs dos seus vídeos
+        const videoPlaylist = [
+            "https://edirc12.github.io/videoplayer/202506101027.mp4",
+            "https://edirc12.github.io/videoplayer/202506181550 (1).mp4"
         ];
-        //                                                                   //
-        // ================================================================= //
-        // ================================================================= //
 
+        // Pega a referência do elemento de vídeo no HTML
+        const videoPlayer = document.getElementById('videoPlayer');
 
-        const videoPlayer = document.getElementById('video-player');
-        let videoAtual = 0;
+        // Variável para controlar qual vídeo está tocando
+        let currentVideoIndex = 0;
 
-        function tocarProximoVideo() {
-            // Se a lista estiver vazia, não faz nada.
-            if (LISTA_DE_VIDEOS.length === 0) {
-                console.error("A lista de vídeos está vazia. Adicione vídeos na configuração.");
-                return;
+        // Define a fonte do primeiro vídeo para começar a tocar
+        videoPlayer.src = videoPlaylist[currentVideoIndex];
+
+        // Adiciona um "ouvinte" que será acionado quando um vídeo terminar
+        videoPlayer.addEventListener('ended', function() {
+            // Avança para o próximo vídeo na lista
+            currentVideoIndex++;
+
+            // Se chegar ao fim da lista, volta para o primeiro vídeo (criando o loop)
+            if (currentVideoIndex >= videoPlaylist.length) {
+                currentVideoIndex = 0;
             }
 
-            // Pega o nome do vídeo da lista
-            const nomeDoVideo = LISTA_DE_VIDEOS[videoAtual];
-            
-            // Define a fonte do vídeo. O navegador vai encontrar o arquivo no mesmo diretório.
-            videoPlayer.src = nomeDoVideo;
-            console.log("Carregando:", nomeDoVideo);
+            // Atualiza a fonte do player com a URL do próximo vídeo
+            videoPlayer.src = videoPlaylist[currentVideoIndex];
 
-            // Tenta tocar o vídeo
-            videoPlayer.play().catch(error => {
-                console.warn("Autoplay bloqueado. O vídeo começará mudo ou precisa de um clique.");
-                // Tenta de novo, mudo (necessário em muitos navegadores)
-                videoPlayer.muted = true;
-                videoPlayer.play();
-            });
-
-            // Prepara o índice para o próximo vídeo
-            videoAtual = (videoAtual + 1) % LISTA_DE_VIDEOS.length;
-        }
-
-        // Quando um vídeo terminar, chama a função para tocar o próximo
-        videoPlayer.addEventListener('ended', tocarProximoVideo);
-
-        // Inicia o player assim que a página carregar
-        document.addEventListener('DOMContentLoaded', tocarProximoVideo);
-
+            // Toca o novo vídeo
+            videoPlayer.play();
+        });
     </script>
+
 </body>
 </html>
