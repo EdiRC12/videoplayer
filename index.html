@@ -11,120 +11,73 @@
             overflow: hidden;
             background-color: #000;
         }
-        #video-container {
+        video {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-        }
-        video {
-            width: 100%;
-            height: 100%;
             object-fit: cover;
-        }
-        #message-overlay {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 1.2em;
-            text-align: center;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
         }
     </style>
 </head>
 <body>
 
-    <div id="video-container"></div>
-    
-    <div id="message-overlay">
-        <p>Carregando vídeos...</p>
-    </div>
+    <video id="video-player"></video>
 
     <script>
-        const GITHUB_USER = "EdiRC12";
-        const GITHUB_REPO = "videoplayer";
-        const VIDEOS_PATH = "videos";
+        // ================================================================= //
+        // =======================  CONFIGURAÇÃO  ======================== //
+        //                                                                   //
+        //  Adicione aqui o nome EXATO dos seus arquivos de vídeo .mp4       //
+        //                                                                   //
+        const LISTA_DE_VIDEOS = [
+            "202506181550 (1).mp4"
+            // Se você upar outro vídeo, adicione o nome dele na próxima linha.
+            // Exemplo:
+            // "outro_video.mp4",
+            // "video_da_empresa.mp4"
+        ];
+        //                                                                   //
+        // ================================================================= //
+        // ================================================================= //
 
-        const videoContainer = document.getElementById('video-container');
-        const messageOverlay = document.getElementById('message-overlay');
-        let videoElement = document.createElement('video');
-        videoContainer.appendChild(videoElement);
 
-        let playlist = [];
-        let currentVideoIndex = 0;
+        const videoPlayer = document.getElementById('video-player');
+        let videoAtual = 0;
 
-        function showMessage(text, isError = false) {
-            messageOverlay.innerHTML = `<p>${text}</p>`;
-            messageOverlay.style.color = isError ? 'red' : 'white';
-        }
-
-        async function initializePlayer() {
-            console.log("Iniciando player...");
-            try {
-                const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${VIDEOS_PATH}`;
-                
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`Erro ao buscar repositório: ${response.statusText}`);
-                }
-                
-                const files = await response.json();
-                
-                playlist = files
-                    .filter(file => file.name.toLowerCase().endsWith('.mp4'))
-                    .map(file => file.download_url);
-
-                if (playlist.length === 0) {
-                    throw new Error("Nenhum vídeo .mp4 encontrado na pasta. Verifique se os arquivos existem e o nome da pasta está correto.");
-                }
-                
-                messageOverlay.style.display = 'none';
-
-                console.log(`Playlist carregada com ${playlist.length} vídeos.`);
-                setupVideoPlayer();
-                playNextVideo();
-
-            } catch (error) {
-                console.error("Falha ao inicializar o player:", error);
-                showMessage(error.message, true);
+        function tocarProximoVideo() {
+            // Se a lista estiver vazia, não faz nada.
+            if (LISTA_DE_VIDEOS.length === 0) {
+                console.error("A lista de vídeos está vazia. Adicione vídeos na configuração.");
+                return;
             }
-        }
 
-        function setupVideoPlayer() {
-            videoElement.autoplay = true; 
-            videoElement.muted = true;
-            videoElement.playsInline = true;
+            // Pega o nome do vídeo da lista
+            const nomeDoVideo = LISTA_DE_VIDEOS[videoAtual];
+            
+            // Define a fonte do vídeo. O navegador vai encontrar o arquivo no mesmo diretório.
+            videoPlayer.src = nomeDoVideo;
+            console.log("Carregando:", nomeDoVideo);
 
-            videoElement.addEventListener('ended', playNextVideo);
-
-            videoElement.addEventListener('canplay', () => {
-                videoElement.play().catch(e => {
-                    console.warn("Autoplay bloqueado pelo navegador. Interação do usuário pode ser necessária.", e);
-                    showMessage("Clique na tela para iniciar o vídeo.", false);
-                    document.body.addEventListener('click', () => videoElement.play(), { once: true });
-                });
+            // Tenta tocar o vídeo
+            videoPlayer.play().catch(error => {
+                console.warn("Autoplay bloqueado. O vídeo começará mudo ou precisa de um clique.");
+                // Tenta de novo, mudo (necessário em muitos navegadores)
+                videoPlayer.muted = true;
+                videoPlayer.play();
             });
+
+            // Prepara o índice para o próximo vídeo
+            videoAtual = (videoAtual + 1) % LISTA_DE_VIDEOS.length;
         }
 
-        function playNextVideo() {
-            if (playlist.length === 0) return;
+        // Quando um vídeo terminar, chama a função para tocar o próximo
+        videoPlayer.addEventListener('ended', tocarProximoVideo);
 
-            videoElement.src = playlist[currentVideoIndex];
-            console.log(`Carregando: ${playlist[currentVideoIndex]}`);
-            
-            currentVideoIndex++;
-            
-            if (currentVideoIndex >= playlist.length) {
-                currentVideoIndex = 0;
-                console.log("Playlist finalizada. Reiniciando...");
-            }
-        }
+        // Inicia o player assim que a página carregar
+        document.addEventListener('DOMContentLoaded', tocarProximoVideo);
 
-        document.addEventListener('DOMContentLoaded', initializePlayer);
     </script>
 </body>
 </html>
